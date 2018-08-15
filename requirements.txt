@@ -1,0 +1,5 @@
+numpy >= 1.11.3
+opencv-python >= 3.4.1
+dlib >= 19.15.0
+imutils >= 0.4.6
+
