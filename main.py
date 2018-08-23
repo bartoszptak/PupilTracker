@@ -28,6 +28,7 @@ bg = background.copy()
 cv2.imshow(window_name, bg)
 cap = cv2.VideoCapture(1)
 
+cursor = False
 calibration = 8
 pupilPositions = []
 sightFocus = [0, 0, 0, 0, 0, 0]
@@ -35,10 +36,7 @@ sightFocus = [0, 0, 0, 0, 0, 0]
 bgz = cv2.imread(os.path.join(data_path, 'bg.png'))
 
 
-def nothing(x):
-    pass
-
-
+#Increase brightness of image
 def increase_brightness(img, value):
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HLS)
     h, l, s = cv2.split(hsv)
@@ -48,6 +46,7 @@ def increase_brightness(img, value):
     return img2
 
 
+#Calculate distance between two eye positions
 def distance(A, B):
     dXA = A[3] - A[1]
     dYA = A[2] - A[0]
@@ -60,6 +59,7 @@ def distance(A, B):
     return (a ** 2 + b ** 2) ** (1 / 2)
 
 
+#Left eye recognition
 def searching(image):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     rects = detector(gray, 1)
@@ -78,6 +78,7 @@ def searching(image):
         return cv2.resize(left, (100, 100))
 
 
+#Pupil and cornea position prediction
 def prediction(eye_img):
     eye_img = cv2.resize(eye_img, (100, 100))
     eye_img_gray = cv2.cvtColor(eye_img, cv2.COLOR_RGB2GRAY)
@@ -90,9 +91,40 @@ def prediction(eye_img):
     result *= 100
     return [int(result[0][0]), int(result[0][1]), int(result[0][2]), int(result[0][3])]
 
-
+#Calculate average of two numbers
 def averaging(a, b):
     return int((a + b) / 2)
+
+#Enable cursor control with look (high resolution camera needed)
+def enableCursor(K):
+    xleftRangeBorder = averaging(pupilPositions[1][2], pupilPositions[4][2]) \
+                       - averaging(pupilPositions[1][0], pupilPositions[4][0])
+
+    xRightRangeBorder = averaging(pupilPositions[3][2], pupilPositions[6][2]) \
+                        - averaging(pupilPositions[3][0], pupilPositions[6][0])
+
+    yUpperRangeBorder = averaging(pupilPositions[1][1], pupilPositions[3][1]) \
+                        - averaging(pupilPositions[1][3], pupilPositions[3][3])
+
+    yLowerRangeBorder = averaging(pupilPositions[4][1], pupilPositions[6][1]) \
+                        - averaging(pupilPositions[4][3], pupilPositions[6][3])
+
+    xRange = xleftRangeBorder - xRightRangeBorder
+    yRange = yLowerRangeBorder - yUpperRangeBorder
+
+    xRealTime = K[2] - K[0] - xRightRangeBorder
+    yRealTime = K[1] - K[3] - yUpperRangeBorder
+
+    xScale = 1 - xRealTime / xRange
+    yScale = yRealTime / yRange
+
+    pX = int(screenX * xScale)
+    pY = int(screenY * yScale)
+
+    si = 20
+
+    cv2.line(bg, (pX - si, pY), (pX + si, pY), (0, 0, 255), 3)
+    cv2.line(bg, (pX, pY - si), (pX, pY + si), (0, 0, 255), 3)
 
 
 while True:
@@ -132,18 +164,19 @@ while True:
         left = searching(image)
         if left is not None:
             K = prediction(left)
-            wyn = [distance(K, pupilPositions[1]),
-                   distance(K, pupilPositions[2]),
-                   distance(K, pupilPositions[3]),
-                   distance(K, pupilPositions[4]),
-                   distance(K, pupilPositions[5]),
-                   distance(K, pupilPositions[6])]
+            distancesFromRegions = \
+                [distance(K, pupilPositions[1]),
+                 distance(K, pupilPositions[2]),
+                 distance(K, pupilPositions[3]),
+                 distance(K, pupilPositions[4]),
+                 distance(K, pupilPositions[5]),
+                 distance(K, pupilPositions[6])]
 
-            our_min = wyn.index(min(wyn))
+            closestRegionIndex = distancesFromRegions.index(min(distancesFromRegions))
 
-            sightFocus[our_min] += 1
+            sightFocus[closestRegionIndex] += 1
 
-            razem = sum(sightFocus)
+            sightFocusSum = sum(sightFocus)
 
             reg0 = bg[0:int(screenY / 2), 0:int(screenX / 3)]
             reg1 = bg[0:int(screenY / 2), int(screenX / 3):int(screenX / 3 * 2)]
@@ -152,12 +185,12 @@ while True:
             reg4 = bg[int(screenY / 2):int(screenY), int(screenX / 3):int(screenX / 3 * 2)]
             reg5 = bg[int(screenY / 2):int(screenY), int(screenX / 3 * 2):int(screenX)]
 
-            reg0 = cv2.convertScaleAbs(reg0, alpha=sightFocus[0] / razem)
-            reg1 = cv2.convertScaleAbs(reg1, alpha=sightFocus[1] / razem)
-            reg2 = cv2.convertScaleAbs(reg2, alpha=sightFocus[2] / razem)
-            reg3 = cv2.convertScaleAbs(reg3, alpha=sightFocus[3] / razem)
-            reg4 = cv2.convertScaleAbs(reg4, alpha=sightFocus[4] / razem)
-            reg5 = cv2.convertScaleAbs(reg5, alpha=sightFocus[5] / razem)
+            reg0 = cv2.convertScaleAbs(reg0, alpha=sightFocus[0] / sightFocusSum)
+            reg1 = cv2.convertScaleAbs(reg1, alpha=sightFocus[1] / sightFocusSum)
+            reg2 = cv2.convertScaleAbs(reg2, alpha=sightFocus[2] / sightFocusSum)
+            reg3 = cv2.convertScaleAbs(reg3, alpha=sightFocus[3] / sightFocusSum)
+            reg4 = cv2.convertScaleAbs(reg4, alpha=sightFocus[4] / sightFocusSum)
+            reg5 = cv2.convertScaleAbs(reg5, alpha=sightFocus[5] / sightFocusSum)
 
             bg[0:int(screenY / 2), 0:int(screenX / 3)] = reg0
             bg[0:int(screenY / 2), int(screenX / 3):int(screenX / 3 * 2)] = reg1
@@ -200,36 +233,8 @@ while True:
             cv2.circle(left, (K[0], K[1]), 2, (0, 0, 255), -2)
             cv2.circle(left, (K[2], K[3]), 2, (0, 255, 255), -2)
 
-            # lewyX = averaging(pupilPositions[1][2], pupilPositions[4][2]) \
-            #         - averaging(pupilPositions[1][0], pupilPositions[4][0])
-            #
-            # prawyX = averaging(pupilPositions[3][2], pupilPositions[6][2]) \
-            #          - averaging(pupilPositions[3][0], pupilPositions[6][0])
-            #
-            # goraY = averaging(pupilPositions[1][1], pupilPositions[3][1]) \
-            #         - averaging(pupilPositions[1][3], pupilPositions[3][3])
-            #
-            # dolY = averaging(pupilPositions[4][1], pupilPositions[6][1]) \
-            #        - averaging(pupilPositions[4][3], pupilPositions[6][3])
-            #
-            # odlegloscX = lewyX - prawyX
-            # odlegloscY = dolY - goraY
-            #
-            # obecnyX = K[2] - K[0] - prawyX
-            # obecnyY = K[1] - K[3] - goraY
-            #
-            # skalaX = 1 - obecnyX / odlegloscX
-            # skalaY = obecnyY / odlegloscY
-            #
-            # pX = int(screenX * skalaX)
-            # pY = int(screenY * skalaY)
-            #
-            #
-            #
-            # si = 20
-            #
-            # cv2.line(bg, (pX - si, pY), (pX + si, pY), (0, 0, 255), 3)
-            # cv2.line(bg, (pX, pY - si), (pX, pY + si), (0, 0, 255), 3)
+            if cursor:
+                enableCursor(K)
 
             left = cv2.resize(left, None, None, 2, 2)
             bg[int(bg.shape[0] / 2 - left.shape[0] / 2):int(bg.shape[0] / 2 + left.shape[0] / 2),
