@@ -6,11 +6,13 @@ import ctypes
 from keras.models import load_model
 import os
 
-detector = dlib.get_frontal_face_detector()
-predictor = dlib.shape_predictor(os.path.join('data', 'shape_predictor_68_face_landmarks.dat'))
+data_path = 'data'
 
-model = load_model(os.path.join('data', 'model.h5'))
-model.load_weights(os.path.join('data', 'weights.h5'))
+detector = dlib.get_frontal_face_detector()
+predictor = dlib.shape_predictor(os.path.join(data_path, 'shape_predictor_68_face_landmarks.dat'))
+
+model = load_model(os.path.join(data_path, 'model.h5'))
+model.load_weights(os.path.join(data_path, 'weights.h5'))
 
 user32 = ctypes.windll.user32
 screenX, screenY = user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
@@ -30,7 +32,7 @@ calibration = 8
 pupilPositions = []
 sightFocus = [0, 0, 0, 0, 0, 0]
 
-bgz = cv2.imread(os.path.join('data', 'bg.png'))
+bgz = cv2.imread(os.path.join(data_path, 'bg.png'))
 
 
 def nothing(x):

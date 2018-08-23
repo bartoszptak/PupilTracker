@@ -1,8 +1,11 @@
 import cv2
 import glob
 import numpy as np
+import os
 
-imgs = glob.glob('./data/eyes/*.jpg')
+data_path = 'data'
+
+imgs = glob.glob(os.path.join(data_path, 'eyes', '*.jpg'))
 
 array = []
 
@@ -13,6 +16,7 @@ def transform(event, x, y, flags, params):
     if event == cv2.EVENT_LBUTTONUP:
         Xs.append(x)
         Xs.append(y)
+
 
 cv2.namedWindow('image')
 cv2.setMouseCallback('image', transform)
@@ -26,10 +30,10 @@ while i < imgs.__len__():
     cv2.imshow('image', imz)
     cv2.waitKey(0)
 
-    if len(Xs)<4:
+    if len(Xs) < 4:
         continue
-    array.append([im, int(Xs[0]/5), int(Xs[1]/5), int(Xs[2]/5), int(Xs[3]/5)])
-    print(imgs.__len__()-i)
+    array.append([im, int(Xs[0] / 5), int(Xs[1] / 5), int(Xs[2] / 5), int(Xs[3] / 5)])
+    print(imgs.__len__() - i)
     i += 1
 
-np.save('./data/arrayN', array)
+np.save(os.path.join(data_path, 'array'), array)
