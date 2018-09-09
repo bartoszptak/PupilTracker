@@ -17,7 +17,7 @@ A project made in one month as part of a student internship at the Poznań Unive
 ### Modules
 * `pupil.py` - An application that is designed to detect eyes and save them as a photo. It is needed to create a data set.
 * `click.py` - Designed to indicate pupils and cornea on each photo of the dataset. Photographs and coordinates are normalized and saved to one database.
-* `Train.ipynb` - Convolutionary neural network, data loading, preparation, training
+* `Train.ipynb` - Convolutional neural network, data loading, preprocessing, training a model
 * `Train_with_transfer_learning.ipynb` - Attempt to use 'transfer learning', 'InceptionV3' algorithm, 'imagenet' weights
 * `main.py` - The main program of the project. 
 
