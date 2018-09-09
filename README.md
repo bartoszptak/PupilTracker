@@ -13,13 +13,13 @@ Short information. Soon...
 * dlib >= 19.15.0
 * imutils >= 0.4.6
 
-### "Header"
-* `pupil.py` - 
-* `click.py` - 
+### Modules
+* `pupil.py` - An application that is designed to detect eyes and save them as a photo. It is needed to create a data set.
+* `click.py` - Designed to indicate pupils and cornea on each photo of the dataset. Photographs and coordinates are normalized and saved to one database.
 * `Train.ipynb` - 
 * `Train_with_transfer_learning.ipynb` - 
-* `main.py` - 
+* `main.py` - The main program of the project. 
 
 ### Credits
-* Damian Szkudlarek
-* Bartosz Ptak
+* [Damian Szkudlarek](https://github.com/szkudlarekdamian)
+* [Bartosz Ptak](https://github.com/bartoszptak)
